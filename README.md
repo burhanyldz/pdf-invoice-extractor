@@ -32,7 +32,7 @@ pdf-invoice-extractor/
 
 1. Clone the repository or download the source code:
 ```
-git clone <repository-url>
+git clone https://github.com/burhanyldz/pdf-invoice-extractor.git
 cd pdf-invoice-extractor
 ```
 
