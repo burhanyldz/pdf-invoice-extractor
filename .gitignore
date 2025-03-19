@@ -2,3 +2,4 @@
 .env
 /invoices
 /outputs
+/.DS_Store
