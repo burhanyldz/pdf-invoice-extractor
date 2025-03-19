@@ -1,0 +1,18 @@
+{
+  "name": "pdf-invoice-extractor",
+  "version": "1.0.0",
+  "description": "A tool to extract invoice data from PDFs using OpenAI API",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "extract": "node src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "openai": "^4.87.4",
+    "pdf-parse": "^1.1.1"
+  }
+}
