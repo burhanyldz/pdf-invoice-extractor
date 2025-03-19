@@ -25,11 +25,69 @@ async function extractInvoiceData(pdfText) {
       messages: [
         {
           role: "system",
-          content: "You are an assistant that extracts structured data from invoice PDFs. Extract all relevant information including invoice number, date, vendor, line items, quantities, prices, subtotal, tax, and total amount. Return ONLY valid JSON with no additional text or explanation. Format your entire response as valid JSON without markdown formatting or any other text."
+          content: `You are an assistant that extracts structured data from invoice PDFs. 
+Extract all relevant information and return it in the following JSON schema format:
+
+{
+  "invoice_number": "",
+  "issue_date": "",
+  "due_date": "",
+  "currency": "",
+  "vendor": {
+    "name": "",
+    "address": "",
+    "email": "",
+    "phone": "",
+    "website": "",
+    "tax_office": "",
+    "tax_number": "",
+    "vkn": "",
+    "trade_registry_no": "",
+    "mersis_no": ""
+  },
+  "customer": {
+    "name": "",
+    "address": "",
+    "email": "",
+    "phone": "",
+    "tax_office": "",
+    "tax_number": "",
+    "trade_registry_no": "",
+    "mersis_no": ""
+  },
+  "line_items": [
+    {
+      "description": "",
+      "quantity": 0,
+      "unit": "",
+      "unit_price": 0,
+      "vat_rate": "",
+      "vat_amount": 0,
+      "amount": 0
+    }
+  ],
+  "subtotal": 0,
+  "total_discount": 0,
+  "vat_base": 0,
+  "calculated_vat": 0,
+  "total_vat": 0,
+  "total_amount": 0,
+  "amount_to_be_paid": 0,
+  "payment_method": "",
+  "payment_date": "",
+  "shipping_date": "",
+  "shipping_carrier_vkn": "",
+  "shipping_carrier_name": "",
+  "notes": ""
+}
+
+Always include all fields in the schema, even if they are empty. 
+For fields not found in the invoice, return empty strings for text and 0 for numbers.
+Return ONLY valid JSON with no additional text or explanation.`
         },
         {
           role: "user",
-          content: `Extract the invoice data from the following text content of a PDF invoice and return it as a valid JSON object: \n\n${pdfText}`
+          content: `Extract the invoice data from the following text content of a PDF invoice and return it as a valid JSON object following the schema exactly: \n\n${pdfText}`
         }
       ]
       // Removed the response_format parameter as it's not supported by gpt-4o-mini
