@@ -9,7 +9,7 @@ const openai = new OpenAI({
 /**
  * Extract invoice data from PDF text using OpenAI API
  * @param {string} pdfText - Text content extracted from PDF
- * @returns {Promise<Object>} - JSON object containing structured invoice data
+ * @returns {Promise<Object>} - JSON object containing structured invoice data and token usage
  */
 async function extractInvoiceData(pdfText) {
   try {
@@ -44,6 +44,18 @@ async function extractInvoiceData(pdfText) {
       };
     }
 
+    // Extract token usage from the response
+    const tokenUsage = {
+      prompt_tokens: completion.usage?.prompt_tokens || 0,
+      completion_tokens: completion.usage?.completion_tokens || 0,
+      total_tokens: completion.usage?.total_tokens || 0
+    };
+
+    console.log('Token Usage:');
+    console.log(`  Prompt tokens: ${tokenUsage.prompt_tokens}`);
+    console.log(`  Completion tokens: ${tokenUsage.completion_tokens}`);
+    console.log(`  Total tokens: ${tokenUsage.total_tokens}`);
+
     const responseContent = completion.choices[0].message.content;
     console.log('Successfully received response from OpenAI API');
 
@@ -60,13 +72,16 @@ async function extractInvoiceData(pdfText) {
     try {
       // Try to parse the JSON response
       const parsedData = JSON.parse(jsonContent);
+      // Add token usage to the response
+      parsedData.token_usage = tokenUsage;
       return parsedData;
     } catch (parseError) {
       console.error('Error parsing JSON response from OpenAI:', parseError);
       return { 
         error: 'Failed to parse API response as JSON',
         raw_response: responseContent,
-        raw_text_sample: pdfText.substring(0, 500) + (pdfText.length > 500 ? '...' : '')
+        raw_text_sample: pdfText.substring(0, 500) + (pdfText.length > 500 ? '...' : ''),
+        token_usage: tokenUsage
       };
     }
   } catch (error) {

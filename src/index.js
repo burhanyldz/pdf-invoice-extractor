@@ -12,6 +12,14 @@ if (!fs.existsSync(outputsDir)) {
   console.log('Created outputs directory for storing results');
 }
 
+// Track token usage across all files
+const tokenUsageSummary = {
+  files: {},
+  totalPromptTokens: 0,
+  totalCompletionTokens: 0,
+  totalTokens: 0
+};
+
 /**
  * Main function to process a PDF invoice and extract data
  * @param {string} pdfPath - Path to the PDF file
@@ -24,14 +32,15 @@ async function processInvoice(pdfPath) {
       process.exit(1);
     }
 
-    console.log(`Processing invoice: ${pdfPath}`);
+    const filename = path.basename(pdfPath);
+    console.log(`Processing invoice: ${filename}`);
     
     // Parse the PDF to extract text
     console.log('Extracting text from PDF...');
     const pdfText = await parsePDF(pdfPath);
     
     if (!pdfText || pdfText.trim() === '') {
-      console.error(`Error: No text content could be extracted from ${pdfPath}`);
+      console.error(`Error: No text content could be extracted from ${filename}`);
       return;
     }
     
@@ -45,9 +54,17 @@ async function processInvoice(pdfPath) {
       return;
     }
     
+    // Track token usage for this file
+    if (invoiceData.token_usage) {
+      tokenUsageSummary.files[filename] = invoiceData.token_usage;
+      tokenUsageSummary.totalPromptTokens += invoiceData.token_usage.prompt_tokens;
+      tokenUsageSummary.totalCompletionTokens += invoiceData.token_usage.completion_tokens;
+      tokenUsageSummary.totalTokens += invoiceData.token_usage.total_tokens;
+    }
+    
     // Save the extracted data as JSON, but now to the outputs directory
-    const filename = `${path.basename(pdfPath, path.extname(pdfPath))}_data.json`;
-    const outputPath = path.join(outputsDir, filename);
+    const outputFilename = `${path.basename(pdfPath, path.extname(pdfPath))}_data.json`;
+    const outputPath = path.join(outputsDir, outputFilename);
     
     // Ensure we have valid JSON data to write
     const jsonData = JSON.stringify(invoiceData, null, 2);
@@ -58,10 +75,6 @@ async function processInvoice(pdfPath) {
     
     fs.writeFileSync(outputPath, jsonData);
     console.log(`Invoice data extracted successfully and saved to: ${outputPath}`);
-    
-    // Output the extracted data
-    console.log('\nExtracted Invoice Data:');
-    console.log(jsonData);
     
     return invoiceData;
   } catch (error) {
@@ -105,11 +118,39 @@ async function processInvoicesDirectory() {
   }
 }
 
+/**
+ * Print token usage summary
+ */
+function printTokenUsageSummary() {
+  console.log('\n===== TOKEN USAGE SUMMARY =====');
+  
+  Object.entries(tokenUsageSummary.files).forEach(([filename, usage]) => {
+    console.log(`\nFile: ${filename}`);
+    console.log(`  Prompt tokens: ${usage.prompt_tokens}`);
+    console.log(`  Completion tokens: ${usage.completion_tokens}`);
+    console.log(`  Total tokens: ${usage.total_tokens}`);
+  });
+  
+  console.log('\nOverall Token Usage:');
+  console.log(`  Total Prompt Tokens: ${tokenUsageSummary.totalPromptTokens}`);
+  console.log(`  Total Completion Tokens: ${tokenUsageSummary.totalCompletionTokens}`);
+  console.log(`  Total Tokens: ${tokenUsageSummary.totalTokens}`);
+  
+  // Save token usage summary to a file
+  const usageSummaryPath = path.join(outputsDir, 'token_usage_summary.json');
+  fs.writeFileSync(usageSummaryPath, JSON.stringify(tokenUsageSummary, null, 2));
+  console.log(`\nToken usage summary saved to: ${usageSummaryPath}`);
+}
+
 // Main execution logic
 async function main() {
   try {
     // We only process files from the invoices directory now
     await processInvoicesDirectory();
+    
+    // Print token usage summary at the end
+    printTokenUsageSummary();
+    
     console.log('Processing completed.');
   } catch (error) {
     console.error('Fatal error:', error);
